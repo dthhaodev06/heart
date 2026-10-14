@@ -1,0 +1,114 @@
+    <!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Trái Tim Đập Kín ❤️</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background-color: #030305; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+
+    window.onresize = () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      init();
+    };
+
+    // Vẽ từng trái tim nhỏ để lấp đầy
+    function drawSmallHeart(x, y, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      const top = size * 0.3;
+      ctx.moveTo(0, top);
+      ctx.bezierCurveTo(0, 0, -size / 2, 0, -size / 2, top);
+      ctx.bezierCurveTo(-size / 2, (size + top) / 2, 0, size, 0, size);
+      ctx.bezierCurveTo(0, size, size / 2, (size + top) / 2, size / 2, top);
+      ctx.bezierCurveTo(size / 2, 0, 0, 0, 0, top);
+      ctx.fillStyle = '#ff0a2d';
+      ctx.shadowColor = '#ff2b4c';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Hàm kiểm tra một điểm (x, y) có nằm TRONG hình trái tim hay không
+    // Sử dụng công thức toán học chuẩn: (x^2 + y^2 - 1)^3 - x^2 * y^3 < 0
+    function isInHeart(x, y, scale) {
+      // Đổi sang tọa độ chuẩn của công thức toán (y hướng lên trên)
+      const nx = x / scale;
+      const ny = -y / scale; // Đảo ngược y vì trên màn hình y đi xuống
+      
+      // Chỉnh sửa tỉ lệ nhẹ để khớp chính xác với dáng tim vector
+      const x2 = nx * 0.95;
+      const y2 = ny * 0.9 + 0.3; 
+      
+      const a = x2 * x2 + y2 * y2 - 1;
+      return (a * a * a - x2 * x2 * y2 * y2 * y2) < 0;
+    }
+
+    let pts = [];
+    function init() {
+      pts = [];
+      const scale = Math.min(w, h) / 3.0; // Kích thước trái tim to lớn hơn
+      const spacing = 11; // Rất nhỏ để xếp khít nhau, không tạo khe hở (càng nhỏ càng dày)
+
+      // Quét theo lưới pixel dày đặc từ trái qua phải, từ trên xuống dưới
+      for (let y = -scale * 1.5; y < scale * 1.5; y += spacing) {
+        for (let x = -scale * 1.5; x < scale * 1.5; x += spacing) {
+          if (isInHeart(x, y, scale * 0.75)) {
+            // Thêm chút ngẫu nhiên nhẹ cho kích cỡ để trông tự nhiên nhưng không bị hở
+            pts.push({
+              x: x,
+              y: y,
+              s: Math.random() * 2 + 10.5, // Cỡ trái tim đủ lớn để chèn khít đè nhẹ lên nhau
+              offset: Math.random() * 6.28
+            });
+          }
+        }
+      }
+    }
+
+    let time = 0;
+    function loop() {
+      // Đặt background có độ mờ nhẹ giúp tối ưu hiệu ứng đập phập phồng
+      ctx.fillStyle = 'rgba(3, 3, 5, 0.3)';
+      ctx.fillRect(0, 0, w, h);
+
+      time += 0.055;
+      // Nhịp đập thình thịch kép (sinh động tự nhiên)
+      const beat = 1 + (Math.sin(time) + Math.sin(time * 2) * 0.5) * 0.085;
+
+      const cx = w / 2;
+      const cy = h / 2 + 30; // Dịch chuyển tâm xuống dưới một chút cho cân đối
+
+      // Vẽ toàn bộ các điểm được tính toán
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        
+        // Cả khối trái tim to co giãn theo nhịp đập
+        const curX = cx + p.x * beat;
+        const curY = cy + p.y * beat;
+        
+        // Từng trái tim con nhấp nháy chuyển động nhẹ tại chỗ
+        const size = p.s * (0.88 + 0.18 * Math.sin(time + p.offset)) * beat;
+        
+        drawSmallHeart(curX, curY, size);
+      }
+      requestAnimationFrame(loop);
+    }
+
+    init();
+    loop();
+  </script>
+</body>
+</html>
